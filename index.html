@@ -501,14 +501,30 @@ async function init() {
       luke:   toArr(d.week && d.week.luke),
       thomas: toArr(d.week && d.week.thomas)
     };
+    clearTimeout(connectTimeout);
     document.getElementById('loading').style.display = 'none';
     renderCurrentView();
   });
 }
 
-init().catch(err => {
+// Timeout — show helpful error if Firebase doesn't respond in 10s
+const connectTimeout = setTimeout(() => {
   document.getElementById('loading').innerHTML =
-    '<div class="l-icon">&#9888;</div><div class="l-title">Connection failed</div><div class="l-sub">'+err.message+'</div>';
+    '<div class="l-icon">&#9888;&#65039;</div>'
+    + '<div class="l-title" style="margin-top:8px">Can\'t reach database</div>'
+    + '<div class="l-sub" style="max-width:280px;text-align:center;line-height:1.5;margin-top:4px">'
+    + 'Check that Firebase rules are published and your internet is connected, then reload.'
+    + '</div>'
+    + '<button onclick="location.reload()" style="margin-top:20px;padding:12px 28px;border:none;border-radius:12px;background:var(--yellow);color:var(--dark);font-size:1rem;font-weight:800;cursor:pointer">&#8635; Try Again</button>';
+}, 10000);
+
+init().catch(err => {
+  clearTimeout(connectTimeout);
+  document.getElementById('loading').innerHTML =
+    '<div class="l-icon">&#9888;&#65039;</div>'
+    + '<div class="l-title" style="margin-top:8px">Connection error</div>'
+    + '<div class="l-sub" style="max-width:280px;text-align:center;line-height:1.5;margin-top:4px">'+err.message+'</div>'
+    + '<button onclick="location.reload()" style="margin-top:20px;padding:12px 28px;border:none;border-radius:12px;background:var(--yellow);color:var(--dark);font-size:1rem;font-weight:800;cursor:pointer">&#8635; Try Again</button>';
 });
 
 // ═══════════════════════════════════════════
@@ -736,30 +752,4 @@ function confirmDeduct() {
   const kid    = document.getElementById('deduct-child').value;
   const amount = parseFloat(document.getElementById('deduct-amount').value);
   const cat    = document.getElementById('deduct-category').value;
-  const note   = document.getElementById('deduct-note').value;
-  if (!amount||amount<=0) { showToast('Enter a valid amount'); return; }
-  if (amount>fb.balances[kid]) { showToast('Not enough balance!'); return; }
-  ROOT.child('balances/'+kid).set(+(fb.balances[kid]-amount).toFixed(2));
-  pushHistory({kid, icon:'&#128722;', desc:cat+(note?' – '+note:''), amount, type:'debit'});
-  closeModal('modal-deduct');
-  showToast('$'+amount.toFixed(2)+' deducted from '+cap(kid));
-  document.getElementById('deduct-amount').value='';
-  document.getElementById('deduct-note').value='';
-}
-
-function confirmPayout() {
-  const who  = document.getElementById('payout-child').value;
-  const kids = who==='both'?['luke','thomas']:[who];
-  const upd  = {};
-  kids.forEach(kid => {
-    upd['balances/'+kid] = +(fb.balances[kid]+10).toFixed(2);
-    pushHistory({kid, icon:'&#128184;', desc:'Weekly allowance payout', amount:10, type:'credit'});
-  });
-  ROOT.update(upd);
-  closeModal('modal-payout');
-  showToast('$10 sent to '+kids.map(cap).join(' & ')+'!');
-}
-
-function confirmAdd() {
-  const kid    = document.getElementById('add-child').value;
-  const amount = parseFloat(document
+  con
